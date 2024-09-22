@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
-import { ADD_PROFILE_IMAGE_ROUTE, UPDATE_PROFILE_ROUTE } from "@/utils/constants";
+import { ADD_PROFILE_IMAGE_ROUTE, HOST, UPDATE_PROFILE_ROUTE } from "@/utils/constants";
 export default function Profile() {
   const navigate = useNavigate();
   const { userInfo, setUserInfo } = useAppStore()
@@ -24,7 +24,11 @@ export default function Profile() {
     if(userInfo.profileSetup){
       setFirstName(userInfo.firstName);
       setLastName(userInfo.lastName);
-      setSelectedColor(userInfo.color)
+      setSelectedColor(userInfo.color);
+    }
+    console.log(HOST)
+    if(userInfo.image){
+      setImage(`${HOST}/${userInfo.image}`)
     }
   },[userInfo])
 
@@ -73,7 +77,8 @@ export default function Profile() {
       if(file){
         const formData=new FormData();
         formData.append("profile-image",file)
-        const response=await apiClient.post(ADD_PROFILE_IMAGE_ROUTE,formData,{withCredentials:true})
+        console.log(ADD_PROFILE_IMAGE_ROUTE)
+        var response=await apiClient.post(ADD_PROFILE_IMAGE_ROUTE,formData,{withCredentials:true})
       }
       if(response.status===200 && response.data.image){
         setUserInfo({...userInfo,image:response.data.image})
