@@ -17,7 +17,7 @@ export const getColor = (color) => {
   if (color >= 0 && color < colors.length) {
     return colors[color];
   }
-  return colors[0]; // Fallback to the first color if out of range
+  return colors[0]; 
 };
 
 export const animationDefaultOptions={
