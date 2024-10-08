@@ -3,5 +3,5 @@ import { HOST } from "@/utils/constants.js";
 
 
 export const apiClient = axios.create({
-  baseURL: HOST,  // Use the environment variable for the base URL
+  baseURL: HOST,  
 });

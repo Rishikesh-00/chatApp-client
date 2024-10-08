@@ -1,28 +1,28 @@
 import { apiClient } from '@/lib/api-client';
 import { useAppStore } from '@/store';
-import { GET_ALL_MESSAGES_ROUTE } from '@/utils/constants';
+import { GET_ALL_MESSAGES_ROUTE, HOST } from '@/utils/constants';
 import moment from 'moment';
 import React, { useEffect, useRef } from 'react'
 
 export default function MessageContainer() {
-  const { selectedChatType, selectedChatData, userInfo, selectedChatMessages,setSelectedChatMessages } = useAppStore();
+  const { selectedChatType, selectedChatData, userInfo, selectedChatMessages, setSelectedChatMessages } = useAppStore();
 
-  useEffect(()=>{
-    const getMessages=async()=>{
-      try{
-        const response=await apiClient.post(GET_ALL_MESSAGES_ROUTE,{id:selectedChatData._id},{withCredentials:true});
-        if(response.data.messages){
+  useEffect(() => {
+    const getMessages = async () => {
+      try {
+        const response = await apiClient.post(GET_ALL_MESSAGES_ROUTE, { id: selectedChatData._id }, { withCredentials: true });
+        if (response.data.messages) {
           setSelectedChatMessages(response.data.messages)
         }
-      }catch(err){
+      } catch (err) {
         console.log(err)
       }
     }
-    if(selectedChatData._id){
-      if(selectedChatType==="contact")
-          getMessages()
+    if (selectedChatData._id) {
+      if (selectedChatType === "contact")
+        getMessages()
     }
-  },[selectedChatData,selectedChatType,setSelectedChatMessages])
+  }, [selectedChatData, selectedChatType, setSelectedChatMessages])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -30,6 +30,13 @@ export default function MessageContainer() {
     }
   }, [selectedChatMessages]);
   const scrollRef = useRef();
+
+  const checkIfImage = (filePath) => {
+    const imageRegex = /\.(jpg|jpeg|png|gif|bmp|tiff|tif|webp|svg|ico|heic|heif)$/i;
+    return imageRegex.test(filePath);
+  };
+  
+
   const renderMessages = () => {
     let lastDate = null;
     return selectedChatMessages.map((message, index) => {
@@ -49,31 +56,12 @@ export default function MessageContainer() {
     })
   }
 
-  // const renderDmMessages = (message) => {
-  //   return (
-  //     <div className={`${message.sender === selectedChatData._id ? "text-left" : "text-right"}`}>
-  //       {message.messageType === "text" && (
-  //         <div
-  //           className={`${
-  //             message.sender !== selectedChatData._id
-  //               ? "bg-[#8417ff]/5 rounded-md text-[#8417ff]/90 border-[#8417ff]/50 "
-  //               : "bg-[#2a2b33]/5 rounded-md text-white/80 border-[#ffffff]/20"
-  //           } border inline-block p-2 my-1 max-w-[50%] break-words `}
-  //         >
-  //           {message.content}
-  //         </div>
-  //       )}
-  //       <div className="text-xs text-gray-600">
-  //         {moment(message.timestamp).format("LT")}
-  //       </div>
-  //     </div>
-  //   );
-  // };
-  
+ 
+
 
   const renderDmMessages = (message) => {
     const isSender = message.sender === selectedChatData._id;
-  
+
     return (
       <div className={`chat ${isSender ? "chat-start " : "chat-end"}`}>
         <div className="chat-bubble">
@@ -82,6 +70,15 @@ export default function MessageContainer() {
               {message.content}
             </div>
           )}
+          {
+            message.messageType==="file" && <div>
+              {checkIfImage(message.fileUrl)?<div className='cursor-pointer '>
+                <img src={`${HOST}/${message.fileUrl}`} height={300} width={300} alt="" />
+              </div>:<div></div>}
+            </div>
+
+
+          }
           <div className="text-xs text-gray-600 mt-1">
             {moment(message.timestamp).format("LT")}
           </div>
@@ -89,7 +86,7 @@ export default function MessageContainer() {
       </div>
     );
   };
-  
+
 
   return (
     <div className='flex-1 overflow-y-auto scrollbar-hidden p-4 px-8 md:w-[65vw] lg:[w-70vw] xl:w-[80vw] w-full '>

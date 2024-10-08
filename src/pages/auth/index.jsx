@@ -1,93 +1,100 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import Background from "@/assets/login2.png";
-import Vicroty from "@/assets/victory.svg"
+import Vicroty from "@/assets/victory.svg";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-// import {apiClient} from "@/lib/api-client"
+import { toast } from "sonner"
 import { HOST, LOGIN_ROUTE, SIGNUP_ROUTE } from '@/utils/constants';
 import { apiClient } from '@/lib/api-client';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/store';
-export default function Auth() {
-  const navigate=useNavigate();
-  const {setUserInfo}=useAppStore();
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPasseord, setconfirmPasseord] = useState("") 
 
-  const validateSignup=()=>{
-    if(!email.length){
+export default function Auth() {
+  const navigate = useNavigate();
+  const { setUserInfo } = useAppStore();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const validateSignup = () => {
+    if (!email.length) {
       toast.error("Email is required.");
       return false;
     }
-    if(!password.length){
+    if (!password.length) {
       toast.error("Password is required.");
       return false;
     }
-    
-    if(password!==confirmPasseord){
-      toast.error("Password does'n match!");
+    if (password !== confirmPassword) {
+      toast.error("Passwords don't match!");
       return false;
     }
     return true;
   }
-  const validateLogin=()=>{
-    if(!email.length){
+
+  const validateLogin = () => {
+    if (!email.length) {
       toast.error("Email is required.");
       return false;
     }
-    if(!password.length){
+    if (!password.length) {
       toast.error("Password is required.");
       return false;
     }
-    
     return true;
   }
 
   const handleLogin = async () => {
-    if(validateLogin()){
-      const response=await apiClient.post(LOGIN_ROUTE,{email,password},{withCredentials:true})
-      if(response.data.user.id){
-        setUserInfo(response.data.user)
-        if(response.data.user.profileSetup) navigate("/chat")
-        else navigate("/profile")
+    if (validateLogin()) {
+      try {
+        const response = await apiClient.post(LOGIN_ROUTE, { email, password }, { withCredentials: true });
+        if (response.data.user.id) {
+          setUserInfo(response.data.user);
+          setEmail("");
+          setPassword("");
+          navigate(response.data.user.profileSetup ? "/chat" : "/profile");
+        }
+        console.log(response);
+      } catch (error) {
+        toast.error("Login failed. Please check your credentials."); // 
+        console.error("Error during login:", error);
       }
-      console.log(response)
     }
-    
   }
 
   const handleSignup = async () => {
     if (validateSignup()) {
       try {
-        const response = await apiClient.post(SIGNUP_ROUTE, { email, password },{withCredentials:true});
-        if(response.status===201){
-          setUserInfo(response.data.user)
-          navigate("/profile")
+        const response = await apiClient.post(SIGNUP_ROUTE, { email, password }, { withCredentials: true });
+        if (response.status === 201) {
+          setUserInfo(response.data.user);
+          setEmail(""); 
+          setPassword("");
+          setConfirmPassword(""); 
+          navigate("/profile");
         }
         console.log({ response });
       } catch (error) {
-        console.error("Error:", error.message);  // Capture the error details
+        toast.error("Signup failed. Please try again."); 
+        console.error("Error during signup:", error.message); // Capture the error details
       }
     }
   };
-  
 
   return (
     <div className="h-[100vh] w-[100vw] flex items-center justify-center">
-      <div className="h-[80vh] bg-white border border-purple-500 text-opacity-90 shadow-2xl w-[80vw] md:w-[90vw] lg:w-[70vw] xl:w- [60vw] rounded-3xl grid xl:grid-cols-2">
+      <div className="h-[80vh] bg-white border border-purple-500 text-opacity-90 shadow-2xl w-[80vw] md:w-[90vw] lg:w-[70vw] xl:w-[60vw] rounded-3xl grid xl:grid-cols-2">
         <div className="flex flex-col gap-10 items-center justify-center ">
           <div className="flex items-center justify-center flex-col">
             <div className="flex items-center justify-center">
-              <h1 className="text-5xl font-bold md:text-6x1">Welcome</h1>
+              <h1 className="text-5xl font-bold md:text-6xl">Welcome</h1>
               <img src={Vicroty} alt="Victory emoji" className='h-[100px]' />
             </div>
             <p className='font-medium text-center'> Fill in the details to get started with the best chat app!</p>
           </div>
           <div className='flex items-center justify-center w-full'>
-            <Tabs defaultValue='login'  className='w-3/4'>
+            <Tabs defaultValue='login' className='w-3/4'>
               <TabsList className="bg-transparent rounded-none w-full ">
                 <TabsTrigger value="login" className="data-[state=active]:bg-transparent text-black text-opacity-90 border-b-2 rounded-none w-full data-[state=active]:text-black data-[state=active]:font-semibold data-[state=active]:border-b-purple-500 p-3 transition-all duration-300">Login</TabsTrigger>
                 <TabsTrigger value="signup" className="data-[state=active]:bg-transparent text-black text-opacity-90 border-b-2 rounded-none w-full data-[state=active]:text-black data-[state=active]:font-semibold data-[state=active]:border-b-purple-500 p-3 transition-all duration-300">Signup</TabsTrigger>
@@ -101,7 +108,7 @@ export default function Auth() {
               <TabsContent className="flex flex-col gap-5" value="signup">
                 <Input placeholder="Email" type="email" className="rounded-full p-6" value={email} onChange={(e) => setEmail(e.target.value)} />
                 <Input placeholder="Password" type="password" className="rounded-full p-6" value={password} onChange={(e) => setPassword(e.target.value)} />
-                <Input placeholder="Confirm password" type="password" className="rounded-full p-6" value={confirmPasseord} onChange={(e) => setconfirmPasseord(e.target.value)} />
+                <Input placeholder="Confirm password" type="password" className="rounded-full p-6" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                 <Button className="rounded-full p-6" onClick={handleSignup}>Signup</Button>
               </TabsContent>
             </Tabs>
@@ -112,5 +119,5 @@ export default function Auth() {
         </div>
       </div>
     </div>
-  )
+  );
 }

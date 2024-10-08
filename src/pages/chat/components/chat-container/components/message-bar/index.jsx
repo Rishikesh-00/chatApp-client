@@ -5,9 +5,12 @@ import { IoSend } from "react-icons/io5";
 import EmojiPicker from "emoji-picker-react";
 import { useAppStore } from "@/store";
 import { useSocket } from "@/context/socketContext";
+import { apiClient } from "@/lib/api-client";
+import { UPLOAD_FILE_ROUTE } from "@/utils/constants";
 
 function MessageBar() {
   const emojiRef = useRef();
+  const fileInputRef = useRef();
   const socket = useSocket();
   const { selectedChatType, selectedChatData, userInfo } = useAppStore();
   const [message, setMessage] = useState("");
@@ -30,7 +33,7 @@ function MessageBar() {
   };
 
   const handleSendMessage = async () => {
-    if (message.trim() === "") return; // Prevent sending empty messages
+    if (message.trim() === "") return;
 
     if (selectedChatType === "contact") {
       socket.emit("sendMessage", {
@@ -41,7 +44,40 @@ function MessageBar() {
         fileUrl: undefined,
       });
     }
-    setMessage(""); // Clear the message input
+    setMessage("");
+  };
+
+  const handleAttachmentClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleAttachmentChange = async (event) => {
+    try {
+      const file = event.target.files[0];
+      if (file) {
+        const formData = new FormData(); 
+        formData.append("file", file);
+        const response = await apiClient.post(UPLOAD_FILE_ROUTE, formData, {
+          withCredentials: true,
+        });
+
+        if (response.status === 200 && response.data) {
+          if (selectedChatType === "contact") {
+            socket.emit("sendMessage", {
+              sender: userInfo.id,
+              content: undefined,
+              recipient: selectedChatData._id,
+              messageType: "file",
+              fileUrl: response.data.filePath,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (
@@ -54,9 +90,13 @@ function MessageBar() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
-        <button className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all">
+        <button
+          className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
+          onClick={handleAttachmentClick}
+        >
           <GrAttachment className="text-2xl" />
         </button>
+        <input type="file" className="hidden" ref={fileInputRef} onChange={handleAttachmentChange} />
         <div className="relative">
           <button
             className="text-neutral-500 focus:border-none focus:outline-none focus:text-white duration-300 transition-all"
@@ -64,20 +104,21 @@ function MessageBar() {
           >
             <RiEmojiStickerLine className="text-2xl" />
           </button>
-          <div className="absolute bottom-16 right-0" ref={emojiRef}>
-            <EmojiPicker
-              theme="dark"
-              open={emojiPickerOpen}
-              onEmojiClick={handleAddEmoji}
-              autoFocusSearch={false}
-            />
-          </div>
+          {emojiPickerOpen && (
+            <div className="absolute bottom-16 right-0" ref={emojiRef}>
+              <EmojiPicker
+                theme="dark"
+                onEmojiClick={handleAddEmoji}
+                autoFocusSearch={false}
+              />
+            </div>
+          )}
         </div>
       </div>
       <button
         id="send"
         onClick={handleSendMessage}
-        disabled={!message.trim()} // Disable if message is empty
+        disabled={!message.trim()} 
         className={`bg-[#8417ff] rounded-md flex items-center justify-center p-4 
           ${!message.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#6e2db8]'} 
           focus:bg-[#741bda] focus:border-none focus:outline-none focus:text-white 
